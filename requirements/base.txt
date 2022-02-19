@@ -1,2 +1,5 @@
 pydantic
 feedparser
+python-slugify
+structlog
+colorama
