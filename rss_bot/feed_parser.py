@@ -1,13 +1,13 @@
-import os
 import filecmp
+import os
 
-from pydantic.networks import AnyHttpUrl
 import feedparser
 import requests
+from pydantic.networks import AnyHttpUrl
 from slugify import slugify
 
 
-def get_full_path(url: AnyHttpUrl, new: bool=False):
+def get_full_path(url: AnyHttpUrl, new: bool = False):
     file_name = slugify(url)
     if new:
         return os.path.join("data", f"new_{file_name}.xml")
@@ -16,7 +16,7 @@ def get_full_path(url: AnyHttpUrl, new: bool=False):
 
 def download_feed(url: AnyHttpUrl):
     r = requests.get(url, allow_redirects=True)
-    open(get_full_path(url, new=True), 'wb').write(r.content)
+    open(get_full_path(url, new=True), "wb").write(r.content)
 
 
 def feed_has_changed(url: AnyHttpUrl):
@@ -42,4 +42,3 @@ def parse_feed(file_name):
     feed = feedparser.parse(file_name)
     # todo: implement some error handling + filtering?
     return feed
-

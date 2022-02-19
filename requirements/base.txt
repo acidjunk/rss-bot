@@ -3,3 +3,4 @@ feedparser
 python-slugify
 structlog
 colorama
+requests
