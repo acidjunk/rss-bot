@@ -33,7 +33,7 @@ def handle_one_feed(index: int, interactive: bool = True, force: bool = False):
     url = feed["url"]
 
     download_feed(url)
-    if not feed_has_changed(url) or not force:
+    if not feed_has_changed(url) and not force:
         logger.info("Feed data hasn't changed since last run", url=url)
     else:
         file_name = get_full_path(url)
@@ -42,7 +42,7 @@ def handle_one_feed(index: int, interactive: bool = True, force: bool = False):
         post = rss.entries[0]
         prefix = feed["prefix"]
         summary = textwrap.shorten(strip_tags(post.summary), width=132).rsplit(". ", 1)[0] + "."
-        tweet = f"{prefix}\n{summary}\n\nMeer info: {post.link}\n"
+        tweet = f"{prefix}\n{summary}\n\n{feed['moreInfo']}: {post.link}\n"
         logger.info("Tweeting", tweet=tweet)
         if interactive:
             answer = input("Tweet? y/n")
@@ -94,7 +94,7 @@ def bot():
             post = feed.entries[0]
             prefix = feed["prefix"]
             summary = textwrap.shorten(strip_tags(post.summary), width=132).rsplit(". ", 1)[0] + "."
-            tweet = f"{prefix}\n{summary}\n\nMeer info: {post.link}\n"
+            tweet = f"{prefix}\n{summary}\n\n{feed['moreInfo']}: {post.link}\n"
             logger.info("Tweeting", tweet=tweet)
             # if settings.TWITTER_CREDS:
             #     os.system(f'tweet -c {settings.TWITTER_CREDS} send "{tweet}"')
