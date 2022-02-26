@@ -4,3 +4,4 @@ python-slugify
 structlog
 colorama
 requests
+typer
