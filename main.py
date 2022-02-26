@@ -40,7 +40,7 @@ def handle_one_feed(index: int, interactive: bool = True, force: bool = False):
         rss = parse_feed(file_name)
 
         post = rss.entries[0]
-        prefix = "Limburgse jazz muzikant: " if "muzikant" in url else "Info over de Award: "
+        prefix = feed["prefix"]
         summary = textwrap.shorten(strip_tags(post.summary), width=132).rsplit(". ", 1)[0] + "."
         tweet = f"{prefix}\n{summary}\n\nMeer info: {post.link}\n"
         logger.info("Tweeting", tweet=tweet)
@@ -48,7 +48,10 @@ def handle_one_feed(index: int, interactive: bool = True, force: bool = False):
             answer = input("Tweet? y/n")
             if not answer == "y":
                 sys.exit()
-        os.system(f'tweet send "{tweet}"')
+        if settings.TWITTER_CREDS:
+            os.system(f'tweet -c {settings.TWITTER_CREDS} send "{tweet}"')
+        else:
+            os.system(f'tweet send "{tweet}"')
         logger.info("Sleeping", seconds=600)
 
 
@@ -89,11 +92,14 @@ def bot():
 
             # Without title and stripped the last dot if possible
             post = feed.entries[0]
-            prefix = "Limburgse jazz muzikant: " if "muzikant" in url else "Info over de Award: "
+            prefix = feed["prefix"]
             summary = textwrap.shorten(strip_tags(post.summary), width=132).rsplit(". ", 1)[0] + "."
             tweet = f"{prefix}\n{summary}\n\nMeer info: {post.link}\n"
             logger.info("Tweeting", tweet=tweet)
-            # os.system(f'tweet send "{tweet}"')
+            # if settings.TWITTER_CREDS:
+            #     os.system(f'tweet -c {settings.TWITTER_CREDS} send "{tweet}"')
+            # else:
+            #     os.system(f'tweet send "{tweet}"')
             logger.info("Sleeping", seconds=600)
             time.sleep(600)
 

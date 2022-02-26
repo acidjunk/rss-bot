@@ -10,5 +10,11 @@
     "url": "https://jazzlimburg.nl/content_category/award/feed/",
     "prefix": "EU-jazz Young Talent Award: ",
     "showTitle": false
+  },
+  {
+    "name": "Real Python News",
+    "url": "https://realpython.com/atom.xml?format=xml",
+    "prefix": "Real Python News: ",
+    "showTitle": false
   }
 ]
