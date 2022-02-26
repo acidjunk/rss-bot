@@ -1,0 +1,14 @@
+[
+  {
+    "name":  "Jazz Limburg Muzikanten",
+    "url": "https://jazzlimburg.nl/content_category/muzikant/feed/",
+    "prefix": "Limburgse jazz muzikant: ",
+    "showTitle": false
+  },
+  {
+    "name":  "Jazz Limburg Award",
+    "url": "https://jazzlimburg.nl/content_category/award/feed/",
+    "prefix": "EU-jazz Young Talent Award: ",
+    "showTitle": false
+  }
+]
