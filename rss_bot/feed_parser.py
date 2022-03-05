@@ -34,7 +34,7 @@ def feed_has_changed(url: AnyHttpUrl):
 
     if not filecmp.cmp(file_name, new_file_name, shallow=True):
 
-        #os.replace(new_file_name, file_name)
+        # os.replace(new_file_name, file_name)
         return True
 
     # Files are identical: so no changes needed

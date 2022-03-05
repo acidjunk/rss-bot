@@ -7,7 +7,7 @@ import structlog
 import typer
 
 from rss_bot.config import settings
-from rss_bot.feed_parser import download_feed, feed_has_changed, get_full_path, parse_feed, generate_tweet
+from rss_bot.feed_parser import download_feed, feed_has_changed, generate_tweet, get_full_path, parse_feed
 from rss_bot.tweeter import send_tweet
 
 logger = structlog.get_logger()
@@ -101,7 +101,7 @@ def bot(interactive: bool = False):
                 sys.exit()
             with open("data/tweets.txt", mode="wt", encoding="utf-8") as f:
                 url_list.append(rss[0].link)
-                f.write('\n'.join(url_list))
+                f.write("\n".join(url_list))
         else:
             with open("data/tweets.txt", mode="wt", encoding="utf-8") as f:
                 f.write(rss[0].link)
