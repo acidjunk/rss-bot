@@ -1,15 +1,14 @@
 import json
 import os
 import sys
-import textwrap
-import time
+from random import randint
 
 import structlog
 import typer
 
 from rss_bot.config import settings
-from rss_bot.feed_parser import download_feed, feed_has_changed, get_full_path, parse_feed
-from rss_bot.stripper import strip_tags
+from rss_bot.feed_parser import download_feed, feed_has_changed, get_full_path, parse_feed, generate_tweet
+from rss_bot.tweeter import send_tweet
 
 logger = structlog.get_logger()
 
@@ -37,21 +36,20 @@ def handle_one_feed(index: int, interactive: bool = True, force: bool = False):
         logger.info("Feed data hasn't changed since last run", url=url)
     else:
         file_name = get_full_path(url)
-        rss = parse_feed(file_name)
+        rss = parse_feed(file_name).entries
 
-        post = rss.entries[0]
-        prefix = feed["prefix"]
-        summary = textwrap.shorten(strip_tags(post.summary), width=132).rsplit(". ", 1)[0] + "."
-        tweet = f"{prefix}\n{summary}\n\n{feed['moreInfo']}: {post.link}\n"
-        logger.info("Tweeting", tweet=tweet)
+        try:
+            tweet = generate_tweet(rss[0], feed)
+            logger.info("Generated tweet", tweet=tweet)
+        except:
+            logger.error("Error with twitter message", rss_item=rss[0], feed=feed)
+            sys.exit()
         if interactive:
             answer = input("Tweet? y/n")
             if not answer == "y":
                 sys.exit()
-        if settings.TWITTER_CREDS:
-            os.system(f'tweet -c {settings.TWITTER_CREDS} send "{tweet}"')
-        else:
-            os.system(f'tweet send "{tweet}"')
+        send_tweet(tweet)
+
         logger.info("Sleeping", seconds=600)
 
 
@@ -65,43 +63,64 @@ def show_feed_info():
 
 
 @app.command()
-def bot():
+def bot(interactive: bool = False):
     """Tweet without human interaction."""
-    for feed in feed_info:
-        url = feed["url"]
-        download_feed(url)
-        # Todo: enable before going live
-        if not feed_has_changed(url):
-            logger.info("Feed data hasn't changed since last run", url=url)
+    index = 0
+    if os.path.exists("data/counter.txt"):
+        with open("data/counter.txt") as f:
+            index = int(f.read())
+        if index >= len(feed_info) - 1:
+            index = 0
         else:
-            file_name = get_full_path(url)
-            feed = parse_feed(file_name)
+            index += 1
+        with open("data/counter.txt", "w") as f:
+            f.write("%d" % index)
+    else:
+        with open("data/counter.txt", "w") as f:
+            f.write("%d" % index)
 
-            # I AM TESTING IT WITH 4 ITEMS MAX AND WHEN THAT WORKS OK MANUALLY: CRONTAB!
-            # Sorted old -> new
-            # for post in feed.entries:
+    logger.info("Determined and stored new index", index=index)
 
-            # With title and stripped summary
-            # post = feed.entries[1]
-            # prefix = "Limburgse jazz muzikant: " if "muzikant" in url else "Info over de Award: "
-            # summary = textwrap.shorten(strip_tags(post.summary), width=120, placeholder=" ...")
-            # tweet = f"{prefix}{post.title}\n{summary}\n\nMeer info: {post.link}\n"
-            # logger.info("Tweeting", tweet=tweet)
-            # os.system(f'tweet send "{tweet}"')
-            # sys.exit()
+    feed = feed_info[index]
+    url = feed["url"]
+    download_feed(url)
+    if not feed_has_changed(url):
+        logger.info("Feed data hasn't changed since last run", url=url)
+    else:
+        file_name = get_full_path(url)
+        rss = parse_feed(file_name).entries
 
-            # Without title and stripped the last dot if possible
-            post = feed.entries[0]
-            prefix = feed["prefix"]
-            summary = textwrap.shorten(strip_tags(post.summary), width=132).rsplit(". ", 1)[0] + "."
-            tweet = f"{prefix}\n{summary}\n\n{feed['moreInfo']}: {post.link}\n"
-            logger.info("Tweeting", tweet=tweet)
-            # if settings.TWITTER_CREDS:
-            #     os.system(f'tweet -c {settings.TWITTER_CREDS} send "{tweet}"')
-            # else:
-            #     os.system(f'tweet send "{tweet}"')
-            logger.info("Sleeping", seconds=600)
-            time.sleep(600)
+        # second safety net: URI only once (some feeds change on disk, because they have dynamic id's)
+        url_list = []
+        if os.path.exists("data/tweets.txt"):
+            with open("data/tweets.txt") as f:
+                url_list = f.read().split("\n")
+                # print(url_list)
+            if rss[0].link in url_list:
+                logger.warning("RSS problems. Skipping tweet based on non unique link", link=rss[0].link)
+                sys.exit()
+            with open("data/tweets.txt", mode="wt", encoding="utf-8") as f:
+                url_list.append(rss[0].link)
+                f.write('\n'.join(url_list))
+        else:
+            with open("data/tweets.txt", mode="wt", encoding="utf-8") as f:
+                f.write(rss[0].link)
+
+        try:
+            tweet = generate_tweet(rss[0], feed)
+            logger.info("Generated tweet", tweet=tweet)
+        except:
+            logger.error("Error with twitter message", rss_item=rss[0], feed=feed)
+            sys.exit()
+
+        if interactive:
+            answer = input("Tweet? y/n")
+            if not answer == "y":
+                sys.exit()
+            send_tweet(tweet)
+        else:
+            logger.info("Sleeping", seconds=randint(0, settings.MAX_SLEEP - 10))
+            send_tweet(tweet)
 
 
 if __name__ == "__main__":
@@ -110,4 +129,3 @@ if __name__ == "__main__":
 
 #
 #
-
